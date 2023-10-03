@@ -5,12 +5,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication//this icludes @Configuration
+@SpringBootApplication  //this includes @Configuration
 public class MeTicketingProjectDataApplication {
 
     public static void main(String[] args) {
 
-        SpringApplication.run(MeTicketingProjectDataApplication.class, args);
+        SpringApplication.run(MeTicketingProjectDataApplication.class,args);
     }
 
     //  am traying to add nan in the container thru @Bean annatation
