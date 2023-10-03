@@ -1,32 +1,32 @@
 package com.cydeo.converter;
 
-import com.cydeo.dto.UserDTO;
+import com.cydeo.dto.ProjectDTO;
 //import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 @Component
 //@ConfigurationPropertiesBinding
-public class UserConverter implements Converter<String, UserDTO> {
+public class ProjectDtoConverter implements Converter<String, ProjectDTO> {
     @Override
-    public UserDTO convert(String source) {
+    public ProjectDTO convert(String source) {
         return null;
     }
 
-//    UserService userService;
+//    ProjectService projectService;
 //
-//    public UserConverter(UserService userService) {
-//        this.userService = userService;
+//    public ProjectConverter(ProjectService projectService) {
+//        this.projectService = projectService;
 //    }
 //
 //    @Override
-//    public UserDTO convert(String source) {
+//    public ProjectDTO convert(String source) {
 //
 //        if (source == null || source.equals("")) {
 //            return null;
 //        }
 //
-//        return userService.findById(source);
+//        return projectService.findById(source);
 //
 //    }
 
