@@ -82,7 +82,8 @@ public class UserController {
 
    @GetMapping("/delete/{username}")
    public String deleteUser(@PathVariable("username") String username) {
-        userService.deleteByUserName(username);
+     //   userService.deleteByUserName(username);
+       userService.delete(username);  //85. satiri bununla degistirince DATA users TABLOSUNDA SILINEN VERI GONRUNTULENEBILDI.
         return "redirect:/user/create";
     }
 
