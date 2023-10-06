@@ -42,6 +42,16 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void update(TaskDTO dto) {
 
+        Optional<Task> task = taskRepository.findById(dto.getId());
+        Task convertedTask = taskMapper.converterToEntity(dto);
+
+        if(task.isPresent()){
+            convertedTask.setTaskStatus(task.get().getTaskStatus());
+            convertedTask.setAssignedDate(task.get().getAssignedDate());
+            taskRepository.save(convertedTask);
+
+        }
+
     }
 
     @Override
@@ -57,6 +67,12 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskDTO findById(Long id) {
+
+        Optional<Task> task = taskRepository.findById(id);
+
+        if(task.isPresent()){
+            return taskMapper.converterToDto(task.get());
+        }
         return null;
     }
 }
