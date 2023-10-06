@@ -84,8 +84,12 @@ public class ProjectServiceImpl implements ProjectService {
         //change the is deleted field to true
         project.setIsDeleted(true);
 
+        project.setProjectCode(project.getProjectCode() + "-" + project.getId()); //SPO3-4
+
         //save the object in the DB
        projectRepository.save(project);
+
+       taskService.deleteByProject(projectMapper.convertToDto(project));
 
 
     }
