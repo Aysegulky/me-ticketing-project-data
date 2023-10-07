@@ -1,90 +1,128 @@
 package com.cydeo.service.impl;
 
 import com.cydeo.dto.ProjectDTO;
-import com.cydeo.dto.TaskDTO;
 import com.cydeo.dto.UserDTO;
+import com.cydeo.entity.Project;
+import com.cydeo.entity.User;
 import com.cydeo.enums.Status;
+import com.cydeo.mapper.ProjectMapper;
+import com.cydeo.mapper.UserMapper;
+import com.cydeo.repository.ProjectRepository;
 import com.cydeo.service.ProjectService;
 import com.cydeo.service.TaskService;
+import com.cydeo.service.UserService;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class ProjectServiceImpl extends AbstractMapService<ProjectDTO,String> implements ProjectService {
+public class ProjectServiceImpl implements ProjectService {
 
+    private final ProjectRepository projectRepository;
+    private final ProjectMapper projectMapper;
+    private final UserService userService;
+    private final UserMapper userMapper;
     private final TaskService taskService;
 
-    public ProjectServiceImpl(TaskService taskService) {
+    public ProjectServiceImpl(ProjectRepository projectRepository, ProjectMapper projectMapper, UserService userService, UserMapper userMapper, TaskService taskService) {
+        this.projectRepository = projectRepository;
+        this.projectMapper = projectMapper;
+        this.userService = userService;
+        this.userMapper = userMapper;
         this.taskService = taskService;
     }
 
     @Override
-    public ProjectDTO save(ProjectDTO project) {
+    public ProjectDTO getByProjectCode(String code) {
+        Project project = projectRepository.findByProjectCode(code);
+        return projectMapper.convertToDto(project);
+    }
 
-        if(project.getProjectStatus()==null)
-            project.setProjectStatus(Status.OPEN);
+    @Override
+    public List<ProjectDTO> listAllProjects() {
 
-        return super.save(project.getProjectCode(),project);
+        List<Project> list = projectRepository.findAll(Sort.by("projectCode"));
+
+        return list.stream().map(projectMapper::convertToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public void save(ProjectDTO dto) {
+
+        dto.setProjectStatus(Status.OPEN);
+        Project project = projectMapper.convertToEntity(dto);
+        projectRepository.save(project);
+    }
+
+    @Override
+    public void update(ProjectDTO dto) {
+
+        Project project = projectRepository.findByProjectCode(dto.getProjectCode());
+
+        Project convertedProject = projectMapper.convertToEntity(dto);
+
+        convertedProject.setId(project.getId());
+
+        convertedProject.setProjectStatus(project.getProjectStatus());
+
+        projectRepository.save(convertedProject);
+
 
     }
 
     @Override
-    public ProjectDTO findById(String projectCode) {
-        return super.findById(projectCode);
-    }
+    public void delete(String code) {
+        Project project = projectRepository.findByProjectCode(code);
+        project.setIsDeleted(true);
 
-    @Override
-    public List<ProjectDTO> findAll() {
-        return super.findAll();
-    }
+        project.setProjectCode(project.getProjectCode() + "-" + project.getId());  // SP03-4
 
-    @Override
-    public void update(ProjectDTO object) {
+        projectRepository.save(project);
 
-        if(object.getProjectStatus()==null){
-            object.setProjectStatus(findById(object.getProjectCode()).getProjectStatus());
-        }
-
-        super.update(object.getProjectCode(),object);
+        taskService.deleteByProject(projectMapper.convertToDto(project));
 
     }
 
     @Override
-    public void deleteById(String projectCode) {
-        super.deleteById(projectCode);
-    }
-
-    @Override
-    public void complete(ProjectDTO project) {
+    public void complete(String projectCode) {
+        Project project = projectRepository.findByProjectCode(projectCode);
         project.setProjectStatus(Status.COMPLETE);
+        projectRepository.save(project);
+
+        taskService.completeByProject(projectMapper.convertToDto(project));
     }
 
     @Override
-    public List<ProjectDTO> getCountedListOfProjectDTO(UserDTO manager) {
+    public List<ProjectDTO> listAllProjectDetails() {
 
-        List<ProjectDTO> projectList =
-                findAll()
-                        .stream()
-                        .filter(project -> project.getAssignedManager().equals(manager))  //John
-                        .map(project ->{
+        UserDTO currentUserDTO = userService.findByUserName("harold@manager.com");
+        User user = userMapper.convertToEntity(currentUserDTO);
 
-                            List<TaskDTO> taskList = taskService.findTasksByManager(manager);
+        //hey DB, give me the all projects assigned to manager login in the system
 
-                            int completeTaskCounts = (int) taskList.stream().filter(t -> t.getProject().equals(project) && t.getTaskStatus() == Status.COMPLETE).count();
-                            int unfinishedTaskCounts = (int) taskList.stream().filter(t -> t.getProject().equals(project) && t.getTaskStatus() != Status.COMPLETE).count();
+        List<Project> list = projectRepository.findAllByAssignedManager(user);
 
-                            project.setCompleteTaskCounts(completeTaskCounts);
-                            project.setUnfinishedTaskCounts(unfinishedTaskCounts);
 
-                            return project;
+        return list.stream().map(project -> {
 
-                        })
-                        .collect(Collectors.toList());
+                    ProjectDTO obj = projectMapper.convertToDto(project);
 
-        return projectList;
+                    obj.setUnfinishedTaskCounts(taskService.totalNonCompletedTask(project.getProjectCode()));
+                    obj.setCompleteTaskCounts(taskService.totalCompletedTask(project.getProjectCode()));
 
+                    return obj;
+                }
+
+        ).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProjectDTO> listAllNonCompletedByAssignedManager(UserDTO assignedManager) {
+        List<Project> projects = projectRepository
+                .findAllByProjectStatusIsNotAndAssignedManager(Status.COMPLETE, userMapper.convertToEntity(assignedManager));
+        return projects.stream().map(projectMapper::convertToDto).collect(Collectors.toList());
     }
 
 }
