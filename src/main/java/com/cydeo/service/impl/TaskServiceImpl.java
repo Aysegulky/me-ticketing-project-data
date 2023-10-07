@@ -34,7 +34,6 @@ public class TaskServiceImpl implements TaskService {
         this.projectMapper = projectMapper;
         this.userService = userService;
         this.userMapper = userMapper;
-    }
 
 
 }
@@ -130,6 +129,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskDTO> listAllTasksByStatus(Status status) {
-        return null;
+        UserDTO loggedInUser = userService.findByUserName("john@employee.com");
+        List<Task> tasks = taskRepository.
+                findAllByTaskStatusAndAssignedEmployee(status, userMapper.convertToEntity(loggedInUser));
+        return tasks.stream().map(taskMapper :: converterToDto).collect(Collectors.toList());
     }
 }
