@@ -34,11 +34,9 @@ public class ProjectServiceImpl implements ProjectService {
         this.taskService = taskService;
     }
 
-
     @Override
     public ProjectDTO getByProjectCode(String code) {
         Project project = projectRepository.findByProjectCode(code);
-
         return projectMapper.convertToDto(project);
     }
 
@@ -46,6 +44,7 @@ public class ProjectServiceImpl implements ProjectService {
     public List<ProjectDTO> listAllProjects() {
 
         List<Project> list = projectRepository.findAll(Sort.by("projectCode"));
+
         return list.stream().map(projectMapper::convertToDto).collect(Collectors.toList());
     }
 
@@ -55,9 +54,6 @@ public class ProjectServiceImpl implements ProjectService {
         dto.setProjectStatus(Status.OPEN);
         Project project = projectMapper.convertToEntity(dto);
         projectRepository.save(project);
-
-
-
     }
 
     @Override
@@ -78,32 +74,24 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void delete(String code) {
-        //go to DB and get that user with user name
         Project project = projectRepository.findByProjectCode(code);
-
-        //change the is deleted field to true
         project.setIsDeleted(true);
 
-        project.setProjectCode(project.getProjectCode() + "-" + project.getId()); //SPO3-4
+        project.setProjectCode(project.getProjectCode() + "-" + project.getId());  // SP03-4
 
-        //save the object in the DB
-       projectRepository.save(project);
+        projectRepository.save(project);
 
-       taskService.deleteByProject(projectMapper.convertToDto(project));
-
+        taskService.deleteByProject(projectMapper.convertToDto(project));
 
     }
 
     @Override
     public void complete(String projectCode) {
-
         Project project = projectRepository.findByProjectCode(projectCode);
         project.setProjectStatus(Status.COMPLETE);
         projectRepository.save(project);
 
-
         taskService.completeByProject(projectMapper.convertToDto(project));
-
     }
 
     @Override
@@ -114,9 +102,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         //hey DB, give me the all projects assigned to manager login in the system
 
-        List<Project> list = projectRepository.findAllByAssignnedManager(user);
-
-
+        List<Project> list = projectRepository.findAllByAssignedManager(user);
 
 
         return list.stream().map(project -> {
@@ -132,5 +118,11 @@ public class ProjectServiceImpl implements ProjectService {
         ).collect(Collectors.toList());
     }
 
+    @Override
+    public List<ProjectDTO> listAllNonCompletedByAssignedManager(UserDTO assignedManager) {
+        List<Project> projects = projectRepository
+                .findAllByProjectStatusIsNotAndAssignedManager(Status.COMPLETE, userMapper.convertToEntity(assignedManager));
+        return projects.stream().map(projectMapper::convertToDto).collect(Collectors.toList());
+    }
 
 }

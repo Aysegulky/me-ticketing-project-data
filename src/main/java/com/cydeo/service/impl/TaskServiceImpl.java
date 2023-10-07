@@ -5,6 +5,7 @@ import com.cydeo.dto.TaskDTO;
 import com.cydeo.dto.UserDTO;
 import com.cydeo.entity.Project;
 import com.cydeo.entity.Task;
+import com.cydeo.entity.User;
 import com.cydeo.enums.Status;
 import com.cydeo.mapper.ProjectMapper;
 import com.cydeo.mapper.TaskMapper;
@@ -34,9 +35,7 @@ public class TaskServiceImpl implements TaskService {
         this.projectMapper = projectMapper;
         this.userService = userService;
         this.userMapper = userMapper;
-
-
-}
+    }
 
     @Override
     public List<TaskDTO> listAllTasks() {
@@ -57,22 +56,22 @@ public class TaskServiceImpl implements TaskService {
     public void update(TaskDTO dto) {
 
         Optional<Task> task = taskRepository.findById(dto.getId());
-        Task convertedTask = taskMapper.converterToEntity(dto);
+        Task convertedTask  = taskMapper.converterToEntity(dto);
 
         if(task.isPresent()){
             convertedTask.setTaskStatus(dto.getTaskStatus() == null ? task.get().getTaskStatus() : dto.getTaskStatus());
             convertedTask.setAssignedDate(task.get().getAssignedDate());
             taskRepository.save(convertedTask);
-
         }
 
     }
 
     @Override
     public void delete(Long id) {
+
         Optional<Task> foundTask = taskRepository.findById(id);
 
-        if (foundTask.isPresent()){
+        if(foundTask.isPresent()){
             foundTask.get().setIsDeleted(true);
             taskRepository.save(foundTask.get());
         }
@@ -92,7 +91,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public int totalNonCompletedTask(String projectCode) {
-        return taskRepository.totalNonCompletedTask(projectCode);
+        return taskRepository.totalNonCompletedTasks(projectCode);
     }
 
     @Override
@@ -104,9 +103,7 @@ public class TaskServiceImpl implements TaskService {
     public void deleteByProject(ProjectDTO projectDTO) {
         Project project = projectMapper.convertToEntity(projectDTO);
         List<Task> tasks = taskRepository.findAllByProject(project);
-
         tasks.forEach(task -> delete(task.getId()));
-
     }
 
     @Override
@@ -124,7 +121,7 @@ public class TaskServiceImpl implements TaskService {
         UserDTO loggedInUser = userService.findByUserName("john@employee.com");
         List<Task> tasks = taskRepository.
                 findAllByTaskStatusIsNotAndAssignedEmployee(status, userMapper.convertToEntity(loggedInUser));
-        return tasks.stream().map(taskMapper ::converterToDto).collect(Collectors.toList());
+        return tasks.stream().map(taskMapper::converterToDto).collect(Collectors.toList());
     }
 
     @Override
@@ -132,6 +129,14 @@ public class TaskServiceImpl implements TaskService {
         UserDTO loggedInUser = userService.findByUserName("john@employee.com");
         List<Task> tasks = taskRepository.
                 findAllByTaskStatusAndAssignedEmployee(status, userMapper.convertToEntity(loggedInUser));
-        return tasks.stream().map(taskMapper :: converterToDto).collect(Collectors.toList());
+        return tasks.stream().map(taskMapper::converterToDto).collect(Collectors.toList());
     }
+
+    @Override
+    public List<TaskDTO> listAllNonCompletedByAssignedEmployee(UserDTO assignedEmployee) {
+        List<Task> tasks = taskRepository
+                .findAllByTaskStatusIsNotAndAssignedEmployee(Status.COMPLETE, userMapper.convertToEntity(assignedEmployee));
+        return tasks.stream().map(taskMapper::converterToDto).collect(Collectors.toList());
+    }
+
 }

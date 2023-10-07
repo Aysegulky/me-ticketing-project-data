@@ -63,7 +63,7 @@ public class UserController {
     }
 
     @PostMapping("/update")
-    public String updateUser( @ModelAttribute("user") UserDTO user, BindingResult bindingResult, Model model) {
+    public String updateUser(@Valid @ModelAttribute("user") UserDTO user, BindingResult bindingResult, Model model) {
 
         if (bindingResult.hasErrors()) {
 
@@ -80,11 +80,12 @@ public class UserController {
 
     }
 
-   @GetMapping("/delete/{username}")
-   public String deleteUser(@PathVariable("username") String username) {
-     //   userService.deleteByUserName(username);
-       userService.delete(username);  //85. satiri bununla degistirince DATA users TABLOSUNDA SILINEN VERI GONRUNTULENEBILDI.
+    @GetMapping("/delete/{username}")
+    public String deleteUser(@PathVariable("username") String username) {
+        //   userService.deleteByUserName(username);
+        userService.delete(username);  //85. satiri bununla degistirince DATA users TABLOSUNDA SILINEN VERI GONRUNTULENEBILDI.
         return "redirect:/user/create";
     }
 
 }
+
